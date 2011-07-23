@@ -126,10 +126,10 @@ class _vcf_metadata_parser(object):
             Description="(?P<desc>[^"]*)"
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
-            ID=(?P<id>[^,]+),
+            ID=(?P<id>.+),
             Number=(?P<number>\d+|\.),
-            Type=(?P<type>Integer|Float|Character|String),
-            Description="(?P<desc>[^"]*)"
+            Type=(?P<type>.+),
+            Description="(?P<desc>.*)"
             >''', re.VERBOSE)
         self.meta_pattern = re.compile(r'''##(?P<key>.+)=(?P<val>.+)''')
 
@@ -185,13 +185,6 @@ class _vcf_metadata_parser(object):
         return match.group('key'), match.group('val')
 
 
-# Utility functions
-def safemap(func, iterable, bad='.', aggro=False):
-    '''``map``, but make bad values None.'''
-    safe = lambda f, x: f(x) if x != bad else (None if aggro else bad)
-    curried = lambda x: safe(func, x)
-    return map(curried, iterable)
-
 
 # Reader class
 
@@ -231,9 +224,43 @@ class VCFReader(object):
         self._formats = None
         self._samples = None
         self.reader = fsock
+        if aggressive:
+            self._mapper = self._none_map
+        else:
+            self._mapper = self._pass_map
 
     def __iter__(self):
         return self
+
+    @property
+    @_meta_info
+    def metadata(self):
+        '''Return the information from lines starting "##"'''
+        return self._metadata
+
+    @property
+    @_meta_info
+    def infos(self):
+        '''Return the information from lines starting "##INFO"'''
+        return self._infos
+
+    @property
+    @_meta_info
+    def filters(self):
+        '''Return the information from lines starting "##FILTER"'''
+        return self._filters
+
+    @property
+    @_meta_info
+    def formats(self):
+        '''Return the information from lines starting "##FORMAT"'''
+        return self._formats
+
+    @property
+    @_meta_info
+    def samples(self):
+        '''Return the names of the genotype fields.'''
+        return self._samples
 
     def _parse_metainfo(self):
         '''Parse the information stored in the metainfo of the VCF.
@@ -269,35 +296,15 @@ class VCFReader(object):
         fields = line.split()
         self._samples = fields[9:]
 
-    @property
-    @_meta_info
-    def metadata(self):
-        '''Return the information from lines starting "##"'''
-        return self._metadata
+    def _none_map(self, func, iterable, bad='.'):
+        '''``map``, but make bad values None.'''
+        return [func(x) if x != bad else None
+                for x in iterable]
 
-    @property
-    @_meta_info
-    def infos(self):
-        '''Return the information from lines starting "##INFO"'''
-        return self._infos
-
-    @property
-    @_meta_info
-    def filters(self):
-        '''Return the information from lines starting "##FILTER"'''
-        return self._filters
-
-    @property
-    @_meta_info
-    def formats(self):
-        '''Return the information from lines starting "##FORMAT"'''
-        return self._formats
-
-    @property
-    @_meta_info
-    def samples(self):
-        '''Return the names of the genotype fields.'''
-        return self._samples
+    def _pass_map(self, func, iterable, bad='.'):
+        '''``map``, but make bad values None.'''
+        return [func(x) if x != bad else bad
+                for x in iterable]
 
     def _parse_info(self, info_str):
         '''Parse the INFO field of a VCF entry into a dictionary of Python
@@ -322,10 +329,10 @@ class VCFReader(object):
 
             if entry_type == 'Integer':
                 vals = entry[1].split(',')
-                val = safemap(int, vals, aggro=self.aggro)
+                val = self._mapper(int, vals)
             elif entry_type == 'Float':
                 vals = entry[1].split(',')
-                val = safemap(float, vals, aggro=self.aggro)
+                val = self._mapper(float, vals)
             elif entry_type == 'Flag':
                 val = True
             elif entry_type == 'String':
@@ -359,9 +366,9 @@ class VCFReader(object):
                         entry_type = 'String'
 
                 if entry_type == 'Integer':
-                    sampdict[fmt] = safemap(int, vals, aggro=self.aggro)
-                elif entry_type == 'Float':
-                    sampdict[fmt] = safemap(float, vals, aggro=self.aggro)
+                    sampdict[fmt] = self._mapper(int, val)
+                elif entry_type == 'Float' or entry_type == 'Numeric':
+                    sampdict[fmt] = self._mapper(float, vals)
                 elif sampdict[fmt] == './.' and self.aggro:
                     sampdict[fmt] = None
 
@@ -386,11 +393,11 @@ class VCFReader(object):
             ID = None if self.aggro else row[2]
 
         ref = row[3]
-        alt = safemap(str, row[4].split(','), aggro=self.aggro)
+        alt = self._mapper(str, row[4].split(','))
         qual = float(row[5]) if '.' in row[5] else int(row[5])
         filt = row[6].split(';') if ';' in row[6] else row[6]
         if filt == 'PASS' and self.aggro:
-            filt = False
+            filt = None
         info = self._parse_info(row[7])
 
         try:
