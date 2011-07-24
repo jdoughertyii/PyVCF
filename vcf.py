@@ -366,7 +366,7 @@ class VCFReader(object):
                         entry_type = 'String'
 
                 if entry_type == 'Integer':
-                    sampdict[fmt] = self._mapper(int, val)
+                    sampdict[fmt] = self._mapper(int, vals)
                 elif entry_type == 'Float' or entry_type == 'Numeric':
                     sampdict[fmt] = self._mapper(float, vals)
                 elif sampdict[fmt] == './.' and self.aggro:
@@ -416,6 +416,7 @@ class VCFReader(object):
 def main():
     '''Parse the example VCF file from the specification and print every
     record.'''
+    import contextlib
     import StringIO
     import textwrap
     buff = '''\
@@ -443,12 +444,11 @@ def main():
         20\t1230237\t.\tT\t.\t47\tPASS\tNS=3;DP=13;AA=T\tGT:GQ:DP:HQ\t0|0:54:7:56,60\t0|0:48:4:51,51\t0/0:61:2
         20\t1234567\tmicrosat1\tGTCT\tG,GTACT\t50\tPASS\tNS=3;DP=9;AA=G\tGT:GQ:DP\t./.:35:4\t0/2:17:2\t1/1:40:3
         '''
-    stream = StringIO.StringIO(textwrap.dedent(buff))
-    vcf_file = VCFReader(stream, aggressive=True)
-    for record in vcf_file:
-        print record
+    with contextlib.closing(StringIO.StringIO(textwrap.dedent(buff))) as sock:
+        vcf_file = VCFReader(sock, aggressive=True)
+        for record in vcf_file:
+            print record
 
-    stream.close()
 
 if __name__ == '__main__':
     main()
