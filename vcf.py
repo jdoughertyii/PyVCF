@@ -110,6 +110,8 @@ RESERVED_FORMAT = {
 _Info = collections.namedtuple('Info', ['id', 'num', 'type', 'desc'])
 _Filter = collections.namedtuple('Filter', ['id', 'desc'])
 _Format = collections.namedtuple('Format', ['id', 'num', 'type', 'desc'])
+
+
 class _vcf_metadata_parser(object):
     '''Parse the metadat in the header of a VCF file.'''
     def __init__(self, aggressive=False):
@@ -185,9 +187,7 @@ class _vcf_metadata_parser(object):
         return match.group('key'), match.group('val')
 
 
-
 # Reader class
-
 class _meta_info(object):
     '''Decorator for a property stored in the header info.'''
     def __init__(self, func):
