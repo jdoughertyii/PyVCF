@@ -361,7 +361,7 @@ class VCFReader(object):
                     entry_type = self.formats[fmt].type
                 except KeyError:
                     try:
-                        entry_type = RESERVED_FORMATs[fmt]
+                        entry_type = RESERVED_FORMAT[fmt]
                     except KeyError:
                         entry_type = 'String'
 
@@ -389,7 +389,7 @@ class VCFReader(object):
 
         if row[2] != '.':
             ID = row[2]
-        else: 
+        else:
             ID = None if self.aggro else row[2]
 
         ref = row[3]
