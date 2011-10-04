@@ -119,7 +119,7 @@ class _vcf_metadata_parser(object):
         self.aggro = aggressive
         self.info_pattern = re.compile(r'''\#\#INFO=<
             ID=(?P<id>[^,]+),
-            Number=(?P<number>\d+|\.),
+            Number=(?P<number>\d+|\.|[AG]),
             Type=(?P<type>Integer|Float|Flag|Character|String),
             Description="(?P<desc>[^"]*)"
             >''', re.VERBOSE)
@@ -129,7 +129,7 @@ class _vcf_metadata_parser(object):
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
             ID=(?P<id>.+),
-            Number=(?P<number>\d+|\.),
+            Number=(?P<number>\d+|\.|[AG]),
             Type=(?P<type>.+),
             Description="(?P<desc>.*)"
             >''', re.VERBOSE)
@@ -431,6 +431,7 @@ def main():
         ##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral Allele">
         ##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership, build 129">
         ##INFO=<ID=H2,Number=0,Type=Flag,Description="HapMap2 membership">
+        ##INFO=<ID=AC,Number=A,Type=Integer,Description="Total number of alternate alleles in called genotypes">
         ##FILTER=<ID=q10,Description="Quality below 10">
         ##FILTER=<ID=s50,Description="Less than 50% of samples have data">
         ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
