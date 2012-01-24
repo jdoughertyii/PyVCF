@@ -1,3 +1,5 @@
+**Development repository for PyVCF is at https://github.com/jamescasbon/PyVCF **
+
 A VCFv4.0 parser for Python.
 
 The intent of this module is to mimic the ``csv`` module in the Python stdlib,
